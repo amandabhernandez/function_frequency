@@ -18,8 +18,10 @@ str_ignore_file <- function(dat, file_str) {
 # 1. READ IN R SCRIPTS    ######################################
 ###############################################################################
 
-R_files <- data.frame(file_path = list.files(path="../", pattern="\\.R$", all.files=FALSE,
-           full.names=TRUE, recursive = TRUE))
+R_files <- data.frame(file_path = 
+                        list.files(path="../", pattern="\\.R$", 
+                                   all.files=FALSE, full.names=TRUE, 
+                                   recursive = TRUE))
 
 # ignore files that are duplicative or I didn't write (also shiny apps)
 myR_files <- R_files %>% 
@@ -31,7 +33,8 @@ myR_files <- R_files %>%
   str_ignore_file("step-by-step-shiny-master") %>% 
   str_ignore_file("Jahred code review") %>% 
   str_ignore_file("ID529data") %>% 
-  str_ignore_file("scraps")
+  str_ignore_file("scraps") %>%
+  str_ignore_file("R source/paper")
   
 
 my_code <- list()
@@ -43,7 +46,7 @@ for(i in 1:length(unique(myR_files$file_path))){
 
 }
 
-all_my_code <- map(.x = my_code, .f = paste, collapse = "") %>% 
+all_my_code <- map(.x = my_code, .f = paste, collapse = " ") %>% 
   map(data.frame) %>% 
   bind_rows(.id = "file_path") %>% 
   rename(code = `.x..i..`)
@@ -57,12 +60,16 @@ length(unique(all_my_code$file_path))
 
 
 functions_in_code <- all_my_code %>% 
-  mutate(functions = str_extract_all(code, pattern = "\\w{2,}(?=\\()")) %>% 
+  mutate(functions = str_extract_all(code, 
+                                     pattern = "\\w{2,}(?:\\.|_*)\\w*(?=\\()")) %>% 
   unnest_longer(col = "functions")
 
 
-function_frequency <- functions_in_code %>% 
+function_frequency <- 
+  functions_in_code %>% 
   group_by(functions) %>% 
   count() %>% 
   arrange(desc(n))
 
+
+write_csv(function_frequency, "function_frequency.csv")
